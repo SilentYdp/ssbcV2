@@ -63,9 +63,3 @@ type P2PMessage struct {
 	Type    string
 	Content string
 }
-
-//跨链TCP消息类型
-type TcpMessage struct {
-	Type    string
-	Content string
-}

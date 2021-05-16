@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/google/keytransparency/core/crypto/vrf/p256"
-	"github.com/ssbcV2/commoncon"
+	"github.com/ssbcV2/commonconst"
 	"github.com/ssbcV2/meta"
 	"math"
 )
@@ -68,7 +68,7 @@ func GenerateVrfResult(msg string) (result meta.VRFResult) {
 		PK:          pkByte,
 		Proof:       proof,
 		Msg:         msg,
-		Count:       commoncon.VRFThreshold,
+		Count:       commonconst.VRFThreshold,
 	}
 	return res
 }

@@ -5,7 +5,7 @@ FROM golang:latest
 WORKDIR /app
 
 # 把文件复制到当前工作目录
-COPY ./gdp .
+COPY ./abhs .
 
 # 设置 GOPROXY 环境变量
 ENV GOPROXY="https://goproxy.cn"
@@ -14,10 +14,10 @@ ENV GOPROXY="https://goproxy.cn"
 RUN go mod download
 
 # 编译项目
-RUN go build -o gdp .
+RUN go build -o main .
 
 # 暴露 8080 端口
 EXPOSE 8080
 
 # 执行可执行文件
-CMD ["./gdp"]
+CMD ["./main"]

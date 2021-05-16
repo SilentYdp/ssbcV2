@@ -2,7 +2,7 @@ package chain
 
 import (
 	"encoding/json"
-	"github.com/ssbcV2/commoncon"
+	"github.com/ssbcV2/commonconst"
 	"github.com/ssbcV2/merkle"
 	"github.com/ssbcV2/meta"
 	"github.com/ssbcV2/util"
@@ -60,7 +60,7 @@ func PackCrossReceipt(t meta.CrossTran, height int, sequence int) meta.CrossTran
 		UserCertificate: uc,
 		TransId:         txs[sequence].Id,
 		Type:            t.Type,
-		Status:          commoncon.StatusSuccess,
+		Status:          commonconst.StatusSuccess,
 		Resp:            resp,
 		Proof:           pf,
 	}
@@ -92,9 +92,10 @@ func PackACrossTransaction(t meta.CrossTran, height int, sequence int) meta.Cros
 		UserCertificate: uc,
 		TransId:         txs[sequence].Id,
 		Type:            t.Type,
-		Status:          commoncon.StatusDeal,
+		Status:          commonconst.StatusDeal,
 		Param:           meta.CrossTranParam{},
 		Proof:           pf,
 	}
+
 	return ct
 }

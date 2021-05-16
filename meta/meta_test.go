@@ -3,7 +3,7 @@ package meta
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ssbcV2/commoncon"
+	"github.com/ssbcV2/commonconst"
 	"testing"
 )
 
@@ -31,7 +31,7 @@ func TestCrossTran(t *testing.T) {
 	tran := CrossTran{
 		SourceChainId: "ssbc",
 		DestChainId:   "ssbc2",
-		Type:          commoncon.CrossTranTransferType,
+		Type:          commonconst.CrossTranTransferType,
 		From:          "",
 		To:            "",
 		Value:         10,

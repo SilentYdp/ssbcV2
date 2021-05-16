@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cloudflare/cfssl/log"
-	"github.com/ssbcV2/commoncon"
+	"github.com/ssbcV2/commonconst"
 	"github.com/ssbcV2/meta"
 	"github.com/ssbcV2/redis"
 )
@@ -18,7 +18,7 @@ func init() {
 //获取到当前交易集合列表
 func GetCurrentTxs() []meta.Transaction {
 	txs := make([]meta.Transaction, 0)
-	txsStr, _ := redis.GetFromRedis(commoncon.TransActionsKey)
+	txsStr, _ := redis.GetFromRedis(commonconst.TransActionsKey)
 	err := json.Unmarshal([]byte(txsStr), &txs)
 	if err != nil {
 		fmt.Println("GetCurrentTxs:json unmarshal failed:", err)
@@ -33,7 +33,7 @@ func StoreCurrentTx(tx meta.Transaction) {
 	curTxs = append(curTxs, tx)
 	txsByte, _ := json.Marshal(curTxs)
 	txsStr := string(txsByte)
-	redis.SetIntoRedis(commoncon.TransActionsKey, txsStr)
+	redis.SetIntoRedis(commonconst.TransActionsKey, txsStr)
 }
 
 //重置当前交易列表
@@ -41,7 +41,7 @@ func ClearCurrentTxs() {
 	txs := make([]meta.Transaction, 0)
 	txsByte, _ := json.Marshal(txs)
 	txsStr := string(txsByte)
-	redis.SetIntoRedis(commoncon.TransActionsKey, txsStr)
+	redis.SetIntoRedis(commonconst.TransActionsKey, txsStr)
 }
 
 //根据交易hash定位到所在区块的高度,以及该交易在交易列表中的序号

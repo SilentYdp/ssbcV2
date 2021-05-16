@@ -1,12 +1,11 @@
 package main
 
 import (
-"fmt"
-"log"
-"net/http"
-"time"
-
-"github.com/gorilla/mux"
+	"fmt"
+	"github.com/gorilla/mux"
+	"log"
+	"net/http"
+	"time"
 )
 
 func handler(w http.ResponseWriter, r *http.Request) {

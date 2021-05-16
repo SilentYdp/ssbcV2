@@ -1,11 +1,21 @@
 package meta
 
 type Transaction struct {
-	From  string      `json:"from"`
-	To    string      `json:"to"`
-	Data  interface{} `json:"data"`
-	Value int         `json:"value"`
-	Id    []byte
+	From      string            `json:"from"`
+	To        string            `json:"to"`
+	Dest      string            `json:"dest"`
+	Contract  string            `json:"contract"`
+	Method    string            `json:"method"`
+	Args      map[string]string `json:"args"`
+	Data      TransactionData   `json:"data"`
+	Value     int               `json:"value"`
+	Id        []byte            `json:"id"`
+	Timestamp string            `json:"timestamp"`
+}
+
+type TransactionData struct {
+	Read map[string]string
+	Set  map[string]string
 }
 
 type Block struct {
@@ -33,12 +43,4 @@ type RegisterInformation struct {
 	Id       string //链名
 	Relayers []Node //中继节点
 	Servers  []Node //服务节点
-}
-
-//节点
-type Node struct {
-	Id        string //节点Id
-	PublicKey string //节点公钥
-	IP        string //ip地址
-	Port      string //端口号
 }
