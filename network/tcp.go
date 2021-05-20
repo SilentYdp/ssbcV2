@@ -23,29 +23,33 @@ func init() {
 
 //使用tcp发送消息
 func TCPSend(msg meta.TCPMessage, addr string) {
-	var con net.Conn
+
+	//版本1：复用连接
+	//版本2：每次建立新的连接
+	//var con net.Conn
 	//先判断该连接之前是否已有
-	if exCon, exists := TCPConnMap[addr]; exists {
-		//直接复用之前的连接
-		con = exCon
-	} else {
+	//if exCon, exists := TCPConnMap[addr]; exists {
+	//	//直接复用之前的连接
+	//	con = exCon
+	//} else {
 		//否则直接dial建立新的连接
-		conn, err := net.Dial("tcp", addr)
-		if err != nil {
-			log.Error("[TCPSend]connect error,err:", err, "msg:", msg, "addr:", addr)
-			return
-		}
-		TCPConnMap[addr] = conn
-		con = conn
+	conn, err := net.Dial("tcp", addr)
+	if err != nil {
+		log.Error("[TCPSend]connect error,err:", err, "msg:", msg, "addr:", addr)
+		return
+		//}
+		//TCPConnMap[addr] = conn
+		//con = conn
 	}
 	context, _ := json.Marshal(msg)
-	_, err := con.Write(context)
+	_, err = conn.Write(context)
 	if err != nil {
 		log.Error(err)
 	}
 
 	//保持连接，可以复用，不用关闭
-	//defer conn.Close()
+	//暂时先不复用，会有死循环的问题
+	defer conn.Close()
 }
 
 func ServerConnHandler(c net.Conn) {

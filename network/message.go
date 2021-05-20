@@ -2,7 +2,6 @@ package network
 
 import (
 	"encoding/json"
-	"github.com/cloudflare/cfssl/log"
 	"github.com/ssbcV2/chain"
 	"github.com/ssbcV2/commonconst"
 	"github.com/ssbcV2/meta"
@@ -22,7 +21,7 @@ func GenBlockSynReqMsg(nodeId string) meta.TCPMessage {
 func GenBlockSynResMsg() meta.TCPMessage {
 	//先获取到本节点的区块链
 	bc := chain.GetCurrentBlockChain()
-	log.Info("当前区块链:", bc)
+	//log.Info("当前区块链:", bc)
 	bcByte, _ := json.Marshal(bc)
 	msg := meta.TCPMessage{
 		Type:    commonconst.BlockSynResMsg,

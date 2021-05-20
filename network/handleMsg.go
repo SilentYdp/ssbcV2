@@ -27,7 +27,7 @@ func HandleBlockSynReqMsg(msg meta.TCPMessage, conn net.Conn) {
 	reqAddr := commonconst.NodeTable[reqNode]
 	//生成区块同步回应消息
 	resMsg := GenBlockSynResMsg()
-	log.Info("区块头同步回应消息：", resMsg)
+	log.Info("区块头同步回应消息!")
 	//回复
 	TCPSend(resMsg, reqAddr)
 }

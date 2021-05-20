@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/cloudflare/cfssl/log"
@@ -10,7 +12,10 @@ import (
 	"github.com/ssbcV2/meta"
 	"github.com/ssbcV2/network"
 	"github.com/ssbcV2/util"
+	"io"
 	"net/http"
+	"os"
+	"os/exec"
 	"strconv"
 	"time"
 )
@@ -24,6 +29,7 @@ func NewClientServer(url string) *Server {
 	server.setRoute()
 	return server
 }
+
 func (server *Server) Start() {
 	fmt.Printf("Server will be started at %s...\n", server.Url)
 	if err := http.ListenAndServe(server.Url, nil); err != nil {
@@ -59,13 +65,89 @@ func (server *Server) setRoute() {
 	http.HandleFunc("/postTran", cors(server.postTran))
 	//获取全部交易
 	http.HandleFunc("/getAllTrans", cors(server.getAllTrans))
+	//注册账户
+	http.HandleFunc("/registerAccount",cors(server.registerAccount))
 	//提交一笔跨链交易
 	//http.HandleFunc("/postCrossTran", server.postCrossTran)
 	//提交智能合约
-	//http.HandleFunc("/postContract", server.postContract)
+	http.HandleFunc("/postContract", cors(server.postContract))
 	//提供链上query服务--既能服务于普通节点也能服务于智能合约
 	http.HandleFunc("/query", cors(server.query))
 
+}
+
+//提交智能合约代码
+func (server *Server) postContract (writer http.ResponseWriter, request *http.Request){
+	//得先获取到合约名
+	contractName:=network.ParseGetParam("contractName",request)
+	defer request.Body.Close()
+	//先在docker文件目录中创建合约文件夹
+	if isExist("./"+contractName){
+		log.Error("该合约已存在")
+	}else {
+		err:=os.Mkdir("../docker/"+contractName,0777)
+		if err!=nil{
+			log.Error(err)
+		}
+		// 创建保存文件
+		destFile, err := os.Create("../docker/"+contractName+"/" + contractName+".go")
+		if err != nil {
+			log.Error("Create failed: %s\n", err)
+			return
+		}
+		defer destFile.Close()
+		// 读取表单文件，写入保存文件
+		_, err = io.Copy(destFile, request.Body)
+		if err != nil {
+			log.Error("Write file failed: %s\n", err)
+			return
+		}
+		//解决代码依赖问题
+		GoModManage(contractName)
+	}
+}
+
+func GoModManage(contractName string)  {
+	var output bytes.Buffer
+	//先进入到合约所在的目录
+	cmd:=exec.Command("cd","../docker/"+contractName)
+	cmd.Stdout=&output
+	err:=cmd.Run()
+	if err!=nil{
+		log.Error(err)
+	}else {
+		fmt.Println(output.String())
+	}
+	//然后执行依赖管理指令
+	cmd=exec.Command("go","mod","init")
+	cmd.Stdout=&output
+	err=cmd.Run()
+	if err!=nil{
+		log.Error(err)
+	}else {
+		fmt.Println(output.String())
+	}
+}
+
+//账户注册
+func (server *Server) registerAccount (writer http.ResponseWriter, request *http.Request){
+	//首先生成公私钥
+	priKey,PubKey:=getKeyPair()
+	//账户地址
+	//将公钥进行hash
+	pubHash,_:=util.CalculateHash(PubKey)
+	//将公钥的前20位作为账户地址
+	account:=hex.EncodeToString(pubHash[:20])
+	res:= struct {
+		PrivateKey string
+		PublicKey  string
+		AccountAddress string
+	}{
+		string(priKey),
+		string(PubKey),
+		account,
+	}
+	warpHttpResponse(writer,res)
 }
 
 //链上信息query服务
@@ -105,6 +187,11 @@ func (server *Server) postTran(writer http.ResponseWriter, request *http.Request
 	if err != nil {
 		log.Error("[postTran],json decode err:", err)
 	}
+	//客户端在转发交易之前需要对交易进行签名
+	//先将交易进行hash
+	tByte,_:=json.Marshal(t)
+	t.Hash,_=util.CalculateHash(tByte)
+	t.Sign=RsaSignWithSha256(t.Hash,[]byte(t.PrivateKey))
 	//客户端需要把交易信息发送给主节点
 	r := new(Request)
 	r.Timestamp = time.Now().UnixNano()
@@ -117,13 +204,15 @@ func (server *Server) postTran(writer http.ResponseWriter, request *http.Request
 	if err != nil {
 		log.Error(err)
 	}
-	fmt.Println(string(br))
+	//fmt.Println(string(br))
 	msg := meta.TCPMessage{
 		Type:    commonconst.PBFTRequest,
 		Content: br,
 	}
 	//默认N0为主节点，直接把请求信息发送至N0
 	network.TCPSend(msg, commonconst.NodeTable["N0"])
+	//返回提交成功
+	warpHttpResponse(writer,"Post Successfully!")
 }
 
 //用户查询当前所有区块-->获取当前的区块链
@@ -180,47 +269,3 @@ func warpHttpResponse(writer http.ResponseWriter, data interface{}) {
 	writer.Write(b)
 }
 
-//假区块用以测试
-func FakeBlockChain() []meta.Block {
-	bcs := make([]meta.Block, 0)
-	testSig, _ := util.CalculateHash([]byte("Signature"))
-	testHash, _ := util.CalculateHash([]byte("Hash"))
-	testMerkleRoot, _ := util.CalculateHash([]byte("MerkleRoot"))
-	Txs := make([]meta.Transaction, 0)
-	T1 := FakeTransaction()
-	Txs = append(Txs, T1)
-	Txs = append(Txs, T1)
-	bc1 := meta.Block{
-		Height:     0,
-		Timestamp:  time.Now().String(),
-		PrevHash:   nil,
-		MerkleRoot: nil,
-		Signature:  nil,
-		Hash:       testHash,
-		TX:         nil,
-	}
-	bc2 := meta.Block{
-		Height:     1,
-		Timestamp:  time.Now().String(),
-		PrevHash:   testHash,
-		MerkleRoot: testMerkleRoot,
-		Signature:  testSig,
-		Hash:       testHash,
-		TX:         Txs,
-	}
-	bcs = append(bcs, bc1)
-	bcs = append(bcs, bc2)
-	return bcs
-}
-
-func FakeTransaction() meta.Transaction {
-	testID, _ := util.CalculateHash([]byte("ID"))
-	t := meta.Transaction{
-		From:  "A",
-		To:    "B",
-		Data:  meta.TransactionData{},
-		Value: 10,
-		Id:    testID,
-	}
-	return t
-}

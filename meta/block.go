@@ -11,6 +11,10 @@ type Transaction struct {
 	Value     int               `json:"value"`
 	Id        []byte            `json:"id"`
 	Timestamp string            `json:"timestamp"`
+	Hash       []byte `json:"hash"`
+	PrivateKey string `json:"private_key"`
+	PublicKey  string `json:"public_key"`
+	Sign       []byte `json:"sign"`
 }
 
 type TransactionData struct {

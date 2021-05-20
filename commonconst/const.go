@@ -46,7 +46,7 @@ const CrossTransOrder = "cto"                   //发送跨链交易
 const RemoteChainHeaderSynchronizeOrder = "rcs" //给他链发送区块头同步信息
 
 //交易数阈值
-const TxsThreshold = 4
+const TxsThreshold = 1
 
 //恶意节点数阈值
 const EvilCount = 1

@@ -119,9 +119,24 @@ func (p *pbft) handleClientRequest(content []byte) {
 	trans := meta.Transaction{}
 	err = json.Unmarshal([]byte(transMsg), &trans)
 	util.DealJsonErr("handleClientRequest", err)
-	//解析交易、执行交易步骤根据交易的input生成output
-	trans=p.parseAndDealTransaction(trans)
+	//step3：主节点对交易进行验签，验签不通过的丢弃
+	if !RsaVerySignWithSha256(trans.Hash,trans.Sign,[]byte(trans.PublicKey)){
+		log.Error("[handleClientRequest] 验签失败!!")
+		return
+	}
+	//*******************************************************************
 
+	//待注释内容--测试专用(主节点作恶：篡改交易内容，hash值变化，但是无法篡改客户端签名)
+	//trans.Value=100
+	//tB,_:=json.Marshal(trans)
+	//tH,_:=util.CalculateHash(tB)
+	//trans.Hash=tH
+
+	//*******************************************************************
+
+
+	//解析交易、执行交易步骤根据交易的input生成output
+	//trans=p.parseAndDealTransaction(trans)
 	trans.Timestamp = time.Now().String()
 	trans.Id, _ = util.CalculateHash([]byte(trans.Timestamp))
 	bc := chain.GetCurrentBlockChain()
@@ -235,6 +250,20 @@ func (p *pbft) handlePrePrepare(content []byte) {
 	//获取主节点的公钥，用于数字签名验证
 	primaryNodePubKey := p.getPubKey("N0")
 	digestByte, _ := hex.DecodeString(pp.Digest)
+	//首先检查所有的交易客户端签名（防止主节点作恶）
+	//step1先获取到全部的交易
+	block:=meta.Block{}
+	err=json.Unmarshal([]byte(pp.RequestMessage.Content),&block)
+	if err!=nil{
+		log.Error("[handlePrePrepare] json err:",err)
+	}
+	for _,tx:=range block.TX{
+		//验签,只要有一笔交易的验签不通过则拒绝进行prepare广播
+		if !RsaVerySignWithSha256(tx.Hash,tx.Sign,[]byte(tx.PublicKey)){
+			fmt.Println("交易签名验证失败，怀疑主节点篡改交易信息，拒绝进行prepare广播")
+			return
+		}
+	}
 	if digest := getDigest(pp.RequestMessage); digest != pp.Digest {
 		fmt.Println("信息摘要对不上，拒绝进行prepare广播")
 	} else if p.sequenceID+1 != pp.SequenceID {
@@ -251,6 +280,21 @@ func (p *pbft) handlePrePrepare(content []byte) {
 		sign := p.RsaSignWithSha256(digestByte, p.node.rsaPrivKey)
 		//拼接成Prepare
 		pre := Prepare{pp.Digest, pp.SequenceID, p.node.nodeID, sign}
+
+		//*******************************************************************
+
+		//待注释--测试专用（从节点作恶：篡改消息摘要）
+		//if p.node.nodeID=="N1"{
+		//	fmt.Println("从节点N1作恶：篡改消息摘要")
+		//	pre.Digest="就是玩儿"
+		//}
+		//
+		//if p.node.nodeID=="N2"{
+		//	fmt.Println("从节点N2作恶：篡改消息摘要")
+		//	pre.Digest="就是玩儿"
+		//}
+
+		//*******************************************************************
 		bPre, err := json.Marshal(pre)
 		if err != nil {
 			log.Error(err)
@@ -302,6 +346,24 @@ func (p *pbft) handlePrepare(content []byte) {
 		//获取消息源节点的公钥，用于数字签名验证
 		if count >= specifiedCount && !p.isCommitBordcast[pre.Digest] {
 			fmt.Println("本节点已收到至少2f个节点(包括本地节点)发来的Prepare信息 ...")
+
+			//*******************************************************************
+
+			//待注释--测试专用（节点作恶：即使全部验证通过也拒绝广播）
+			//if p.node.nodeID=="N0"{
+			//	fmt.Println("主节点作恶：全部验证通过，但是拒绝广播")
+			//	p.lock.Unlock()
+			//	return
+			//}
+			//
+			//if p.node.nodeID=="N1"{
+			//	fmt.Println("从节点N1作恶：全部验证通过，但是拒绝广播")
+			//	p.lock.Unlock()
+			//	return
+			//}
+			//
+			//*******************************************************************
+
 			//节点使用私钥对其签名
 			sign := p.RsaSignWithSha256(digestByte, p.node.rsaPrivKey)
 			c := Commit{pre.Digest, pre.SequenceID, p.node.nodeID, sign}
