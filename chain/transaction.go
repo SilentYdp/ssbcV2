@@ -11,9 +11,9 @@ import (
 )
 
 //初始化的时候重置一次交易列表
-func init() {
-	ClearCurrentTxs()
-}
+//func init() {
+//	ClearCurrentTxs()
+//}
 
 //获取到当前交易集合列表
 func GetCurrentTxs() []meta.Transaction {
