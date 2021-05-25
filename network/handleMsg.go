@@ -24,7 +24,12 @@ func ParseTCPMsg(data []byte) meta.TCPMessage {
 func HandleBlockSynReqMsg(msg meta.TCPMessage, conn net.Conn) {
 	//先获取到请求方的地址
 	reqNode := msg.From
-	reqAddr := commonconst.NodeTable[reqNode]
+	var reqAddr string
+	if reqNode=="client"{
+		reqAddr=commonconst.ClientToNodeAddr
+	}else {
+		reqAddr = commonconst.NodeTable[reqNode]
+	}
 	//生成区块同步回应消息
 	resMsg := GenBlockSynResMsg()
 	log.Info("区块头同步回应消息!")

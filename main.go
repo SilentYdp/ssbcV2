@@ -7,6 +7,7 @@ import (
 	"github.com/ssbcV2/levelDB"
 	"github.com/ssbcV2/meta"
 	"github.com/ssbcV2/network"
+	"github.com/ssbcV2/pbft"
 	"os"
 )
 
@@ -23,7 +24,7 @@ var nodeTable map[string]string
 
 func main() {
 	//为四个节点生成公私钥
-	GenRsaKeys()
+	pbft.GenRsaKeys()
 	nodeTable = map[string]string{
 		"N0":     "127.0.0.1:8000",
 		"N1":     "127.0.0.1:8001",
@@ -37,12 +38,12 @@ func main() {
 	//数据库连接
 	levelDB.InitDB(nodeID)
 	if nodeID == "client" {
-		clientSendMessageAndListen() //启动客户端程序
+		pbft.ClientSendMessageAndListen() //启动客户端程序
 		//初始化
 		initBlockChain(nodeID)
 	} else if addr, ok := nodeTable[nodeID]; ok {
-		p := NewPBFT(nodeID, addr)
-		go p.tcpListen() //启动节点
+		p := pbft.NewPBFT(nodeID, addr)
+		go p.TcpListen() //启动节点
 		//初始化
 		initBlockChain(nodeID)
 	} else {

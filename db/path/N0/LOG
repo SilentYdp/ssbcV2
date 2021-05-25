@@ -1,0 +1,81 @@
+=============== May 25, 2021 (CST) ===============
+10:23:30.377015 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:23:30.421597 db@open opening
+10:23:30.425303 version@stat F·[] S·0B[] Sc·[]
+10:23:30.448195 db@janitor F·2 G·0
+10:23:30.448971 db@open done T·27.299259ms
+=============== May 25, 2021 (CST) ===============
+10:37:07.424598 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:37:07.424943 version@stat F·[] S·0B[] Sc·[]
+10:37:07.424971 db@open opening
+10:37:07.425051 journal@recovery F·1
+10:37:07.428313 journal@recovery recovering @1
+10:37:07.456868 memdb@flush created L0@2 N·1 S·322B "Blo..ain,v1":"Blo..ain,v1"
+10:37:07.458795 version@stat F·[1] S·322B[322B] Sc·[0.25]
+10:37:07.526892 db@janitor F·3 G·0
+10:37:07.526985 db@open done T·101.991252ms
+=============== May 25, 2021 (CST) ===============
+10:38:12.620660 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:38:12.621013 version@stat F·[1] S·322B[322B] Sc·[0.25]
+10:38:12.621043 db@open opening
+10:38:12.621136 journal@recovery F·1
+10:38:12.621691 journal@recovery recovering @3
+10:38:12.622166 version@stat F·[1] S·322B[322B] Sc·[0.25]
+10:38:12.692164 db@janitor F·3 G·0
+10:38:12.692209 db@open done T·71.147743ms
+=============== May 25, 2021 (CST) ===============
+11:01:35.965935 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+11:01:35.966217 version@stat F·[1] S·322B[322B] Sc·[0.25]
+11:01:35.966241 db@open opening
+11:01:35.966315 journal@recovery F·1
+11:01:35.968245 journal@recovery recovering @5
+11:01:35.992245 memdb@flush created L0@7 N·1 S·3KiB "Blo..ain,v3":"Blo..ain,v3"
+11:01:35.993304 version@stat F·[2] S·4KiB[4KiB] Sc·[0.50]
+11:01:36.056943 db@janitor F·4 G·0
+11:01:36.056978 db@open done T·90.724441ms
+=============== May 25, 2021 (CST) ===============
+11:14:09.659958 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+11:14:09.660261 version@stat F·[2] S·4KiB[4KiB] Sc·[0.50]
+11:14:09.660285 db@open opening
+11:14:09.660365 journal@recovery F·1
+11:14:09.660888 journal@recovery recovering @8
+11:14:09.661435 version@stat F·[2] S·4KiB[4KiB] Sc·[0.50]
+11:14:09.732131 db@janitor F·4 G·0
+11:14:09.732180 db@open done T·71.879415ms
+=============== May 25, 2021 (CST) ===============
+12:59:10.483941 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:59:10.487666 version@stat F·[2] S·4KiB[4KiB] Sc·[0.50]
+12:59:10.487689 db@open opening
+12:59:10.487767 journal@recovery F·1
+12:59:10.488330 journal@recovery recovering @10
+12:59:10.488760 version@stat F·[2] S·4KiB[4KiB] Sc·[0.50]
+12:59:10.557295 db@janitor F·4 G·0
+12:59:10.557335 db@open done T·69.633542ms
+=============== May 25, 2021 (CST) ===============
+13:08:20.680533 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+13:08:20.681649 version@stat F·[2] S·4KiB[4KiB] Sc·[0.50]
+13:08:20.681680 db@open opening
+13:08:20.681774 journal@recovery F·1
+13:08:20.683643 journal@recovery recovering @12
+13:08:20.705497 memdb@flush created L0@14 N·1 S·5KiB "Blo..ain,v5":"Blo..ain,v5"
+13:08:20.710118 version@stat F·[3] S·9KiB[9KiB] Sc·[0.75]
+13:08:20.780404 db@janitor F·5 G·0
+13:08:20.780490 db@open done T·98.791205ms
+=============== May 25, 2021 (CST) ===============
+15:30:30.768365 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+15:30:30.770533 version@stat F·[3] S·9KiB[9KiB] Sc·[0.75]
+15:30:30.770571 db@open opening
+15:30:30.770689 journal@recovery F·1
+15:30:30.771427 journal@recovery recovering @15
+15:30:30.792997 memdb@flush created L0@17 N·1 S·7KiB "Blo..ain,v7":"Blo..ain,v7"
+15:30:30.798388 version@stat F·[4] S·17KiB[17KiB] Sc·[1.00]
+15:30:30.865623 db@janitor F·6 G·0
+15:30:30.865654 db@open done T·95.068652ms
+15:30:30.865710 table@compaction L0·4 -> L1·0 S·17KiB Q·8
+15:30:30.887748 table@build created L1@20 N·1 S·7KiB "Blo..ain,v7":"Blo..ain,v7"
+15:30:30.888279 version@stat F·[0 1] S·7KiB[0B 7KiB] Sc·[0.00 0.00]
+15:30:30.908989 table@compaction committed F-3 S-9KiB Ke·0 D·3 T·43.192656ms
+15:30:30.909651 table@remove removed @17
+15:30:30.909778 table@remove removed @14
+15:30:30.910475 table@remove removed @7
+15:30:30.911420 table@remove removed @2

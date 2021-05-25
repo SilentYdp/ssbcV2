@@ -1,7 +1,6 @@
-package docker
+package smart_contract
 
 import (
-	"archive/tar"
 	"bufio"
 	"bytes"
 	"context"
@@ -14,18 +13,21 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
+	"github.com/docker/go-connections/nat"
 	"github.com/ssbcV2/meta"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 )
 
 var DockerClient *client.Client
 var ctx context.Context
 
-func InitDockerClient() {
+func init() {
 	ctx = context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -34,63 +36,35 @@ func InitDockerClient() {
 	DockerClient = cli
 }
 
-func main() {
-	InitDockerClient()
-	BuildAImage()
-}
+
 
 //基于源代码编译为docker镜像
-func BuildAndRun(path string) {
+func BuildAndRun(path string,name string) {
 	//超时退出设置
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
 	//defer cancel()
 
 	//先压缩源代码文件
-	tar, err := archive.TarWithOptions("./gdp/", &archive.TarOptions{})
+	tar, err := archive.TarWithOptions(path, &archive.TarOptions{})
+	log.Info("合约编译镜像地址为：",path)
+	//获取当前程序执行的路径
+	file, _ := os.Getwd()
+	log.Info("当前程序执行路径:", file)
 	if err != nil {
 		fmt.Println("tar err:",err)
 	}
 
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
-
-	dockerFile := "myDockerfile"
-	dockerFileReader, err := os.Open("/Users/yedepeng/go/src/github.com/ssbcV2/docker/Dockerfile")
-	if err != nil {
-		log.Fatal(err, " :unable to open Dockerfile")
-	}
-	readDockerFile, err := ioutil.ReadAll(dockerFileReader)
-	if err != nil {
-		log.Fatal(err, " :unable to read dockerfile")
-	}
-
-	tarHeader := &tar.Header{
-		Name: dockerFile,
-		Size: int64(len(readDockerFile)),
-	}
-	err = tw.WriteHeader(tarHeader)
-	if err != nil {
-		log.Fatal(err, " :unable to write tar header")
-	}
-	_, err = tw.Write(readDockerFile)
-	if err != nil {
-		log.Fatal(err, " :unable to write tar body")
-	}
-	dockerFileTarReader := bytes.NewReader(buf.Bytes())
-
 	//build参数
 	opts := types.ImageBuildOptions{
-		Context:    dockerFileTarReader,
-		Dockerfile: dockerFile,
-		Tags:       []string{"newgdp"},
+		Dockerfile: "Dockerfile",
+		Tags:       []string{name},
 		Labels: map[string]string{
-			"ssbc": "project",
+			"name": name,
 		},
-		//Remove:     true,
+		Remove:     true,
 	}
 
-	res, err := DockerClient.ImageBuild(ctx, dockerFileTarReader, opts)
+	res, err := DockerClient.ImageBuild(ctx, tar, opts)
 	if err != nil {
 		fmt.Println("ImageBuild err:", err)
 	}
@@ -100,6 +74,39 @@ func BuildAndRun(path string) {
 	if err != nil {
 		fmt.Println("err:", err)
 	}
+
+	//把build成功的镜像run为容器
+	exports := make(nat.PortSet, 10)
+	port, err := nat.NewPort("tcp", "8080")
+	if err!=nil{
+		log.Error(err)
+	}
+	exports[port] = struct{}{}
+	config := &container.Config{Image: name, ExposedPorts: exports}
+
+	//这里嵌入一个逻辑--寻找当前空闲的端口号
+	//获取到可用的tcp连接端口
+	availPInt,_ := getFreePort()
+	fmt.Println("可用端口号为：",availPInt)
+	availPStr:=strconv.Itoa(availPInt)
+	portBind := nat.PortBinding{HostPort: availPStr}
+	portMap := make(nat.PortMap, 0)
+	tmp := make([]nat.PortBinding, 0, 1)
+	tmp = append(tmp, portBind)
+	portMap[port] = tmp
+	hostConfig := &container.HostConfig{PortBindings: portMap}
+	// networkingConfig := &network.NetworkingConfig{}
+	containerName := "contract"+name
+	body, err := DockerClient.ContainerCreate(ctx, config, hostConfig, nil,nil, containerName)
+	if err!=nil{
+		log.Error(err)
+	}
+	fmt.Printf("容器build成功，ID: %s\n", body.ID)
+	if err := DockerClient.ContainerStart(ctx, body.ID, types.ContainerStartOptions{}); err != nil {
+		log.Error(err)
+		panic(err)
+	}
+
 }
 
 func ContractDataServer(key string) (data []byte) {
@@ -125,52 +132,74 @@ func ContractDataServer(key string) (data []byte) {
 
 	return body
 }
+
+//调用智能合约
 func CallContract(name string,method string,args map[string]string) (retErr error,resp meta.ContractResponse) {
 	//step0：先进行参数校验
 	if name==""|| method==""{
 		retErr=errors.New("invalid call params")
+		log.Error(retErr)
 		return
 	}
 	//step1：判断是否存在所调用的智能合约
-	if address,exist:=ContractMap[name];exist{
-		//封装调用参数
-		req:=meta.ContractRequest{
-			Method: method,
-			Args:   args,
+	//先取出当前运行的容器列表
+	var find bool
+	cs:= ListAllContains()
+	cont:=types.Container{}
+	for _, c := range cs {
+		fmt.Println(c.ID, c.Image)
+		if c.Image==name{
+			cont=c
+			find=true
 		}
-		reqByte,_:=json.Marshal(req)
-		body:=bytes.NewBuffer(reqByte)
-		res,err := http.Post(address, "application/json;charset=utf-8", body)
-		if err!=nil{
-			log.Error("[CallContract] call err:",err)
-			retErr=err
-			return
-		}
-
-		//读取合约调用结果
-		result, err := ioutil.ReadAll(res.Body)
-		defer res.Body.Close()
-		if err!=nil{
-			log.Error("[CallContract] read result err:",err)
-			retErr=err
-			return
-		}
-		//反序列化为最终response
-		response:=meta.ContractResponse{}
-		retErr=json.Unmarshal(result,&response)
-		if retErr!=nil{
-			log.Error("[CallContract] json unmarshal failed,err:",err)
-			return
-		}
-		return nil,response
-	}else {
-		retErr=errors.New("Contract calling not exist,please check! ")
+	}
+	if find==false{
+		retErr=errors.New("contract not exists")
+		log.Error(retErr)
 		return
 	}
+
+	//解析出所调用的合约地址
+	var port uint16
+	for _,p:=range cont.Ports{
+		port=p.PublicPort
+		break
+	}
+	portStr:=strconv.Itoa(int(port))
+
+
+	//封装调用参数
+	req:=meta.ContractRequest{
+		Method: method,
+		Args:   args,
+	}
+	reqByte,_:=json.Marshal(req)
+	body:=bytes.NewBuffer(reqByte)
+	res,err := http.Post("127.0.0.1:"+portStr, "application/json;charset=utf-8", body)
+	if err!=nil{
+		log.Error("[CallContract] call err:",err)
+		retErr=err
+		return
+	}
+
+	//读取合约调用结果
+	result, err := ioutil.ReadAll(res.Body)
+	defer res.Body.Close()
+	if err!=nil{
+		log.Error("[CallContract] read result err:",err)
+		retErr=err
+		return
+	}
+	//反序列化为最终response
+	response:=meta.ContractResponse{}
+	retErr=json.Unmarshal(result,&response)
+	if retErr!=nil{
+		log.Error("[CallContract] json unmarshal failed,err:",err)
+		return
+	}
+	return nil,response
+
 }
-
-
-
 
 
 func printError(rd io.Reader) error {
@@ -279,21 +308,15 @@ func main2() {
 }
 
 //List and manage containers
-func main3() {
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+func ListAllContains() []types.Container{
+	containers, err := DockerClient.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
 		panic(err)
 	}
-
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
-	if err != nil {
-		panic(err)
-	}
-
-	for _, container := range containers {
-		fmt.Println(container.ID, container.Image)
-	}
+	return containers
+	//for _, container := range containers {
+	//	fmt.Println(container.ID, container.Image)
+	//}
 }
 
 //Stop all running containers
@@ -407,4 +430,19 @@ func main8() {
 	}
 
 	fmt.Println(commitResp.ID)
+}
+
+//在本机找空闲端口号
+func getFreePort() (int, error) {
+	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
+	if err != nil {
+		return 0, err
+	}
+
+	l, err := net.ListenTCP("tcp", addr)
+	if err != nil {
+		return 0, err
+	}
+	defer l.Close()
+	return l.Addr().(*net.TCPAddr).Port, nil
 }

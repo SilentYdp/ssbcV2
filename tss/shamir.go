@@ -1,4 +1,4 @@
-package musig
+package tss
 
 import "go.dedis.ch/kyber/v3"
 

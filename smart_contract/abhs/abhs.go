@@ -47,10 +47,6 @@ type ContractRequest struct {
 	Args   map[string]string
 }
 
-
-
-
-
 func getAbstractBlockHeader(h int,dest string) *AbstractBlockHeader {
 	//首先获取到列表
 	abs:=getAbstractBlockHeaders(dest)
@@ -89,7 +85,6 @@ func StoreAbstractBlockHeader(header string,dest string) ContractResponse {
 func getAbstractBlockHeaders(dest string) []AbstractBlockHeader {
 	//先拼装查询key
 	key:=AbstractBlockHeaderStoreKey+dest
-
 	//调用智能合约数据服务
 	params := url.Values{}
 	Url, err := url.Parse("http://docker.for.mac.host.internal:9999/query")
@@ -104,7 +99,6 @@ func getAbstractBlockHeaders(dest string) []AbstractBlockHeader {
 
 	resp,err := http.Get(urlPath)
 	defer resp.Body.Close()
-
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)

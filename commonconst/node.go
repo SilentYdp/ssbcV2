@@ -7,7 +7,7 @@ const ClientToNodeAddr = "127.0.0.1:8888"
 const ClientToUserAddr = ":9999"
 
 //节点个数
-const nodeCount = 4
+const NodeCount = 4
 
 //生成全局变量-节点池
 var NodeTable map[string]string
@@ -15,7 +15,6 @@ var NodeTable map[string]string
 func init() {
 	NodeTable = make(map[string]string)
 	NodeTable = map[string]string{
-		"client": "127.0.0.1:8888",
 		"N0":     "127.0.0.1:8000",
 		"N1":     "127.0.0.1:8001",
 		"N2":     "127.0.0.1:8002",
