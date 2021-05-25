@@ -1,4 +1,4 @@
-package main
+package pbft
 
 import (
 	"crypto/sha256"

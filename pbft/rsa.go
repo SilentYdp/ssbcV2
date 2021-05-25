@@ -1,4 +1,4 @@
-package main
+package pbft
 
 import (
 	"crypto"
@@ -15,7 +15,7 @@ import (
 )
 
 //如果当前目录下不存在目录Keys，则创建目录，并为各个节点生成rsa公私钥
-func genRsaKeys() {
+func GenRsaKeys() {
 	if !isExist("./Keys") {
 		fmt.Println("检测到还未生成公私钥目录，正在生成公私钥 ...")
 		err := os.Mkdir("Keys", 0777)
@@ -29,7 +29,7 @@ func genRsaKeys() {
 					log.Panic()
 				}
 			}
-			priv, pub := getKeyPair()
+			priv, pub := GetKeyPair()
 			privFileName := "Keys/N" + strconv.Itoa(i) + "/N" + strconv.Itoa(i) + "_RSA_PIV"
 			file, err := os.OpenFile(privFileName, os.O_RDWR|os.O_CREATE, 0777)
 			if err != nil {
@@ -51,7 +51,7 @@ func genRsaKeys() {
 }
 
 //生成rsa公私钥
-func getKeyPair() (prvkey, pubkey []byte) {
+func GetKeyPair() (prvkey, pubkey []byte) {
 	// 生成私钥文件
 	privateKey, err := rsa.GenerateKey(rand.Reader, 1024)
 	if err != nil {

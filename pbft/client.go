@@ -1,18 +1,19 @@
-package main
+package pbft
 
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/ssbcV2/commonconst"
 	"log"
 	"math/big"
 )
 
-func clientSendMessageAndListen() {
+func ClientSendMessageAndListen() {
 	//开始用户请求的监听
-	go clientHttpListen()
+	go clientHttpListenV2()
 	//开启客户端的本地监听（主要用来接收节点的reply信息）
 	go clientTcpListen()
-	fmt.Printf("客户端开启监听，地址：%s\n", clientAddr)
+	fmt.Printf("客户端开启监听，地址：%s\n", commonconst.ClientToNodeAddr)
 	fmt.Println(" ---------------------------------------------------------------------------------")
 	fmt.Println("|  已进入PBFT客户端，请启动全部节点后再发送消息！  |")
 	fmt.Println(" ---------------------------------------------------------------------------------")

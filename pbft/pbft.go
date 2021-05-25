@@ -1,4 +1,4 @@
-package main
+package pbft
 
 import (
 	"encoding/hex"
@@ -7,10 +7,10 @@ import (
 	"github.com/cloudflare/cfssl/log"
 	"github.com/ssbcV2/chain"
 	"github.com/ssbcV2/commonconst"
-	"github.com/ssbcV2/docker"
 	"github.com/ssbcV2/levelDB"
 	"github.com/ssbcV2/meta"
 	"github.com/ssbcV2/network"
+	"github.com/ssbcV2/smart_contract"
 	"github.com/ssbcV2/util"
 	"io/ioutil"
 	"net"
@@ -18,7 +18,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
 )
 
 //本地消息池（模拟持久化层），只有确认提交成功后才会存入此池
@@ -136,7 +135,7 @@ func (p *pbft) handleClientRequest(content []byte) {
 
 
 	//解析交易、执行交易步骤根据交易的input生成output
-	//trans=p.parseAndDealTransaction(trans)
+	trans=p.parseAndDealTransaction(trans)
 	trans.Timestamp = time.Now().String()
 	trans.Id, _ = util.CalculateHash([]byte(trans.Timestamp))
 	bc := chain.GetCurrentBlockChain()
@@ -185,14 +184,42 @@ func (p *pbft) handleClientRequest(content []byte) {
 func (p *pbft) parseAndDealTransaction(t meta.Transaction)meta.Transaction {
 	//首先判断该笔交易是否为智能合约调用
 	if t.Contract!=""{
-		//调用智能合约产生读写集
-		err,res:=docker.CallContract(t.Contract,t.Method,t.Args)
-		if err!=nil{
-			//调用失败
+		//先判断是合约调用还是合约部署
+		if t.To==commonconst.ContractDeployAddress{
+			//合约部署处理
+			//step1：生成合约账户
+			priKey,PubKey:= GetKeyPair()
+			//将公钥进行hash
+			pubHash,_:=util.CalculateHash(PubKey)
+			//将公钥的前20位作为账户地址
+			addr:=hex.EncodeToString(pubHash[:20])
+			ad:=meta.AccountData{
+				Code:         t.Data.Code,
+				ContractName: t.Contract,
+			}
+			account:=meta.Account{
+				Address:    addr,
+				Balance:    0,
+				Data:       ad,
+				PublicKey:  PubKey,
+				PrivateKey: priKey,
+			}
+			accountB,_:=json.Marshal(account)
+			set:=make(map[string]string)
+			accountKey:=commonconst.AccountPrefixKey+addr
+			set[accountKey]=string(accountB)
+			t.Data.Set=set
 		}else {
-			//交易的data字段赋值
-			t.Data.Read=res.Read
-			t.Data.Set=res.Set
+			//合约调用处理--调用智能合约产生读写集
+			err,res:=smart_contract.CallContract(t.Contract,t.Method,t.Args)
+			if err!=nil{
+				log.Error("合约调用失败")
+				//调用失败
+			}else {
+				//交易的data字段赋值
+				t.Data.Read=res.Read
+				t.Data.Set=res.Set
+			}
 		}
 	}else {
 		//非智能合约调用交易-->即简单的转账交易(而且是简单的本链转账交易)
@@ -337,9 +364,9 @@ func (p *pbft) handlePrepare(content []byte) {
 		//因为主节点不会发送Prepare，所以不包含自己
 		specifiedCount := 0
 		if p.node.nodeID == "N0" {
-			specifiedCount = nodeCount / 3 * 2
+			specifiedCount = commonconst.NodeCount / 3 * 2
 		} else {
-			specifiedCount = (nodeCount / 3 * 2) - 1
+			specifiedCount = (commonconst.NodeCount / 3 * 2) - 1
 		}
 		//如果节点至少收到了2f个prepare的消息（包括自己）,并且没有进行过commit广播，则进行commit广播
 		p.lock.Lock()
@@ -411,7 +438,7 @@ func (p *pbft) handleCommit(content []byte) {
 		}
 		//如果节点至少收到了2f+1个commit消息（包括自己）,并且节点没有回复过,并且已进行过commit广播，则提交信息至本地消息池，并reply成功标志至客户端！
 		p.lock.Lock()
-		if count >= nodeCount/3*2 && !p.isReply[c.Digest] && p.isCommitBordcast[c.Digest] {
+		if count >= commonconst.NodeCount/3*2 && !p.isReply[c.Digest] && p.isCommitBordcast[c.Digest] {
 			fmt.Println("本节点已收到至少2f + 1 个节点(包括本地节点)发来的Commit信息 ...")
 			//将消息信息，提交到本地消息池中！
 			localMessagePool = append(localMessagePool, p.messagePool[c.Digest].Message)
@@ -445,8 +472,15 @@ func (p *pbft) handleCommit(content []byte) {
 func (p *pbft) refreshState(b meta.Block) {
 	//ste1：首先取出本区块中所有的交易
 	txs:=b.TX
-	//每一笔交易写集进行更新
+	//每一笔交易写集进行更新,若交易为部署新合约，则触发部署
 	for _,tx:=range txs{
+		if tx.To==commonconst.ContractDeployAddress && p.node.nodeID=="N0"{
+			//部署合约
+			contractName:=tx.Contract
+			//生成build地址
+			path:="./smart_contract/"+contractName+"/"
+			smart_contract.BuildAndRun(path,contractName)
+		}
 		set:=tx.Data.Set
 		for k,v:=range set{
 			if k!=""{
@@ -465,11 +499,11 @@ func (p *pbft) sequenceIDAdd() {
 
 //向除自己外的其他节点进行广播
 func (p *pbft) broadcast(msg meta.TCPMessage) {
-	for i := range nodeTable {
+	for i := range commonconst.NodeTable {
 		if i == p.node.nodeID {
 			continue
 		}
-		go network.TCPSend(msg, nodeTable[i])
+		go network.TCPSend(msg, commonconst.NodeTable[i])
 	}
 }
 

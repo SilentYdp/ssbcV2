@@ -1,4 +1,4 @@
-package main
+package pbft
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ import (
 
 //客户端使用的tcp监听
 func clientTcpListen() {
-	listen, err := net.Listen("tcp", clientAddr)
+	listen, err := net.Listen("tcp", commonconst.ClientToNodeAddr)
 	if err != nil {
 		log.Error(err)
 	}
@@ -92,14 +92,8 @@ func refreshState (b meta.Block) {
 	}
 }
 
-//客户端监听用户发起的http请求
-func clientHttpListen() {
-	s := NewClientServer(commonconst.ClientToUserAddr)
-	s.Start()
-}
-
 //节点使用的tcp监听
-func (p *pbft) tcpListen() {
+func (p *pbft) TcpListen() {
 	listen, err := net.Listen("tcp", p.node.addr)
 	if err != nil {
 		log.Error(err)
