@@ -12,70 +12,18 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/ssbcV2/meta"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 )
 
 var DockerClient *client.Client
 var ctx context.Context
-var ContractMap map[string]string //智能合约名与调用地址映射关系
-func init()  {
-	//初始化时把已有合约name与调用地址进行bind
-
-}
-
-func main() {
-	InitDockerClient()
-	BuildAImage()
-}
-
-func CallContract(name string,method string,args map[string]string) (retErr error,resp meta.ContractResponse) {
-	//step0：先进行参数校验
-	if name==""|| method==""{
-		retErr=errors.New("invalid call params")
-		return
-	}
-	//step1：判断是否存在所调用的智能合约
-	if address,exist:=ContractMap[name];exist{
-		//封装调用参数
-		req:=meta.ContractRequest{
-			Method: method,
-			Args:   args,
-		}
-		reqByte,_:=json.Marshal(req)
-		body:=bytes.NewBuffer(reqByte)
-		res,err := http.Post(address, "application/json;charset=utf-8", body)
-		if err!=nil{
-			log.Error("[CallContract] call err:",err)
-			retErr=err
-			return
-		}
-
-		//读取合约调用结果
-		result, err := ioutil.ReadAll(res.Body)
-		defer res.Body.Close()
-		if err!=nil{
-			log.Error("[CallContract] read result err:",err)
-			retErr=err
-			return
-		}
-		//反序列化为最终response
-		response:=meta.ContractResponse{}
-		retErr=json.Unmarshal(result,&response)
-		if retErr!=nil{
-			log.Error("[CallContract] json unmarshal failed,err:",err)
-			return
-		}
-		return nil,response
-	}else {
-		retErr=errors.New("Contract calling not exist,please check! ")
-		return
-	}
-}
 
 func InitDockerClient() {
 	ctx = context.Background()
@@ -86,17 +34,22 @@ func InitDockerClient() {
 	DockerClient = cli
 }
 
+func main() {
+	InitDockerClient()
+	BuildAImage()
+}
+
 //基于源代码编译为docker镜像
-func BuildAImage() {
+func BuildAndRun(path string) {
 	//超时退出设置
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*120)
 	//defer cancel()
 
 	//先压缩源代码文件
-	//tar, err := archive.TarWithOptions("./gdp/", &archive.TarOptions{})
-	//if err != nil {
-	//	fmt.Println("tar err:",err)
-	//}
+	tar, err := archive.TarWithOptions("./gdp/", &archive.TarOptions{})
+	if err != nil {
+		fmt.Println("tar err:",err)
+	}
 
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
@@ -148,6 +101,77 @@ func BuildAImage() {
 		fmt.Println("err:", err)
 	}
 }
+
+func ContractDataServer(key string) (data []byte) {
+	//智能合约数据服务
+	params := url.Values{}
+	Url, err := url.Parse("http://docker.for.mac.host.internal:9999/query")
+	if err!=nil{
+		fmt.Println("url parse err:",err)
+	}
+
+	params.Set("queryKey",key)
+	//如果参数中有中文参数,这个方法会进行URLEncode
+	Url.RawQuery = params.Encode()
+	urlPath := Url.String()
+
+	resp,err := http.Get(urlPath)
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return body
+}
+func CallContract(name string,method string,args map[string]string) (retErr error,resp meta.ContractResponse) {
+	//step0：先进行参数校验
+	if name==""|| method==""{
+		retErr=errors.New("invalid call params")
+		return
+	}
+	//step1：判断是否存在所调用的智能合约
+	if address,exist:=ContractMap[name];exist{
+		//封装调用参数
+		req:=meta.ContractRequest{
+			Method: method,
+			Args:   args,
+		}
+		reqByte,_:=json.Marshal(req)
+		body:=bytes.NewBuffer(reqByte)
+		res,err := http.Post(address, "application/json;charset=utf-8", body)
+		if err!=nil{
+			log.Error("[CallContract] call err:",err)
+			retErr=err
+			return
+		}
+
+		//读取合约调用结果
+		result, err := ioutil.ReadAll(res.Body)
+		defer res.Body.Close()
+		if err!=nil{
+			log.Error("[CallContract] read result err:",err)
+			retErr=err
+			return
+		}
+		//反序列化为最终response
+		response:=meta.ContractResponse{}
+		retErr=json.Unmarshal(result,&response)
+		if retErr!=nil{
+			log.Error("[CallContract] json unmarshal failed,err:",err)
+			return
+		}
+		return nil,response
+	}else {
+		retErr=errors.New("Contract calling not exist,please check! ")
+		return
+	}
+}
+
+
+
+
 
 func printError(rd io.Reader) error {
 	type ErrorDetail struct {

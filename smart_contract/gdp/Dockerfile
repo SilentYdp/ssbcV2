@@ -5,7 +5,7 @@ FROM golang:latest
 WORKDIR /app
 
 # 把文件复制到当前工作目录
-COPY ./abhs .
+COPY . .
 
 # 设置 GOPROXY 环境变量
 ENV GOPROXY="https://goproxy.cn"
