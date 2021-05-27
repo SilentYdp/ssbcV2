@@ -24,7 +24,7 @@ func TestCrossRegister(t *testing.T) {
 	}
 
 	infoByte, _ := json.Marshal(info)
-	fmt.Println(string(infoByte))
+	log.Info(string(infoByte))
 }
 
 func TestCrossTran(t *testing.T) {
@@ -37,5 +37,5 @@ func TestCrossTran(t *testing.T) {
 		Value:         10,
 	}
 	tranByte, _ := json.Marshal(tran)
-	fmt.Println(string(tranByte))
+	log.Info(string(tranByte))
 }

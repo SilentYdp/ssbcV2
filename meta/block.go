@@ -28,7 +28,7 @@ type PostTran struct {
 	Dest      string            `json:"dest"`
 	Contract  string            `json:"contract"`
 	Method    string            `json:"method"`
-	Args      map[string]string `json:"args"`
+	Args      string `json:"args"`
 	Value     int               `json:"value"`
 	PrivateKey string `json:"private_key"`
 	PublicKey  string `json:"public_key"`

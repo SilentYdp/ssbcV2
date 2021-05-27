@@ -3,7 +3,6 @@ package pbft
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/ssbcV2/chain"
 	"github.com/ssbcV2/commonconst"
@@ -105,7 +104,7 @@ func (p *pbft) handlePBFTMsg(msg meta.TCPMessage) {
 
 //处理客户端发来的请求
 func (p *pbft) handleClientRequest(content []byte) {
-	fmt.Println("主节点已接收到客户端发来的request ...")
+	log.Info("主节点已接收到客户端发来的request ...")
 	//Step1:使用json解析出Request结构体
 	r := new(Request)
 	err := json.Unmarshal(content, r)
@@ -155,7 +154,7 @@ func (p *pbft) handleClientRequest(content []byte) {
 		p.sequenceIDAdd()
 		//获取消息摘要
 		digest := getDigest(*r)
-		fmt.Println("已将request存入临时消息池")
+		log.Info("已将request存入临时消息池")
 		//存入临时消息池
 		p.messagePool[digest] = *r
 		//主节点对消息摘要进行签名
@@ -167,14 +166,14 @@ func (p *pbft) handleClientRequest(content []byte) {
 		if err != nil {
 			log.Error(err)
 		}
-		fmt.Println("正在向其他节点进行进行PrePrepare广播 ...")
+		log.Info("正在向其他节点进行进行PrePrepare广播 ...")
 		//进行PrePrepare广播
 		msg := meta.TCPMessage{
 			Type:    commonconst.PBFTPrePrepare,
 			Content: b,
 		}
 		p.broadcast(msg)
-		fmt.Println("PrePrepare广播完成")
+		log.Info("PrePrepare广播完成")
 	} else {
 		log.Info("主节点已将交易存储至交易池，交易详情：", transMsg)
 	}
@@ -182,6 +181,7 @@ func (p *pbft) handleClientRequest(content []byte) {
 
 //主节点收到交易后需要对交易进行解析处理
 func (p *pbft) parseAndDealTransaction(t meta.Transaction)meta.Transaction {
+	log.Info("主节点接收到的交易为:",t)
 	//首先判断该笔交易是否为智能合约调用
 	if t.Contract!=""{
 		//先判断是合约调用还是合约部署
@@ -267,7 +267,7 @@ func (p *pbft) dealLocalTransFer (t meta.Transaction) meta.Transaction{
 
 //处理预准备消息
 func (p *pbft) handlePrePrepare(content []byte) {
-	fmt.Println("本节点已接收到主节点发来的PrePrepare ...")
+	log.Info("本节点已接收到主节点发来的PrePrepare ...")
 	//	//使用json解析出PrePrepare结构体
 	pp := new(PrePrepare)
 	err := json.Unmarshal(content, pp)
@@ -287,21 +287,21 @@ func (p *pbft) handlePrePrepare(content []byte) {
 	for _,tx:=range block.TX{
 		//验签,只要有一笔交易的验签不通过则拒绝进行prepare广播
 		if !RsaVerySignWithSha256(tx.Hash,tx.Sign,[]byte(tx.PublicKey)){
-			fmt.Println("交易签名验证失败，怀疑主节点篡改交易信息，拒绝进行prepare广播")
+			log.Info("交易签名验证失败，怀疑主节点篡改交易信息，拒绝进行prepare广播")
 			return
 		}
 	}
 	if digest := getDigest(pp.RequestMessage); digest != pp.Digest {
-		fmt.Println("信息摘要对不上，拒绝进行prepare广播")
+		log.Info("信息摘要对不上，拒绝进行prepare广播")
 	} else if p.sequenceID+1 != pp.SequenceID {
-		fmt.Println("消息序号对不上，拒绝进行prepare广播")
+		log.Info("消息序号对不上，拒绝进行prepare广播")
 	} else if !p.RsaVerySignWithSha256(digestByte, pp.Sign, primaryNodePubKey) {
-		fmt.Println("主节点签名验证失败！,拒绝进行prepare广播")
+		log.Info("主节点签名验证失败！,拒绝进行prepare广播")
 	} else {
 		//序号赋值
 		p.sequenceID = pp.SequenceID
 		//将信息存入临时消息池
-		fmt.Println("已将消息存入临时节点池")
+		log.Info("已将消息存入临时节点池")
 		p.messagePool[pp.Digest] = pp.RequestMessage
 		//节点使用私钥对其签名
 		sign := p.RsaSignWithSha256(digestByte, p.node.rsaPrivKey)
@@ -312,12 +312,12 @@ func (p *pbft) handlePrePrepare(content []byte) {
 
 		//待注释--测试专用（从节点作恶：篡改消息摘要）
 		//if p.node.nodeID=="N1"{
-		//	fmt.Println("从节点N1作恶：篡改消息摘要")
+		//	log.Info("从节点N1作恶：篡改消息摘要")
 		//	pre.Digest="就是玩儿"
 		//}
 		//
 		//if p.node.nodeID=="N2"{
-		//	fmt.Println("从节点N2作恶：篡改消息摘要")
+		//	log.Info("从节点N2作恶：篡改消息摘要")
 		//	pre.Digest="就是玩儿"
 		//}
 
@@ -327,13 +327,13 @@ func (p *pbft) handlePrePrepare(content []byte) {
 			log.Error(err)
 		}
 		//进行准备阶段的广播
-		fmt.Println("正在进行Prepare广播 ...")
+		log.Info("正在进行Prepare广播 ...")
 		msg := meta.TCPMessage{
 			Type:    commonconst.PBFTPrepare,
 			Content: bPre,
 		}
 		p.broadcast(msg)
-		fmt.Println("Prepare广播完成")
+		log.Info("Prepare广播完成")
 	}
 }
 
@@ -345,16 +345,16 @@ func (p *pbft) handlePrepare(content []byte) {
 	if err != nil {
 		log.Error(err)
 	}
-	fmt.Printf("本节点已接收到%s节点发来的Prepare ... \n", pre.NodeID)
+	log.Infof("本节点已接收到%s节点发来的Prepare ... \n", pre.NodeID)
 	//获取消息源节点的公钥，用于数字签名验证
 	MessageNodePubKey := p.getPubKey(pre.NodeID)
 	digestByte, _ := hex.DecodeString(pre.Digest)
 	if _, ok := p.messagePool[pre.Digest]; !ok {
-		fmt.Println("当前临时消息池无此摘要，拒绝执行commit广播")
+		log.Info("当前临时消息池无此摘要，拒绝执行commit广播")
 	} else if p.sequenceID != pre.SequenceID {
-		fmt.Println("消息序号对不上，拒绝执行commit广播")
+		log.Info("消息序号对不上，拒绝执行commit广播")
 	} else if !p.RsaVerySignWithSha256(digestByte, pre.Sign, MessageNodePubKey) {
-		fmt.Println("节点签名验证失败！,拒绝执行commit广播")
+		log.Info("节点签名验证失败！,拒绝执行commit广播")
 	} else {
 		p.setPrePareConfirmMap(pre.Digest, pre.NodeID, true)
 		count := 0
@@ -372,19 +372,19 @@ func (p *pbft) handlePrepare(content []byte) {
 		p.lock.Lock()
 		//获取消息源节点的公钥，用于数字签名验证
 		if count >= specifiedCount && !p.isCommitBordcast[pre.Digest] {
-			fmt.Println("本节点已收到至少2f个节点(包括本地节点)发来的Prepare信息 ...")
+			log.Info("本节点已收到至少2f个节点(包括本地节点)发来的Prepare信息 ...")
 
 			//*******************************************************************
 
 			//待注释--测试专用（节点作恶：即使全部验证通过也拒绝广播）
 			//if p.node.nodeID=="N0"{
-			//	fmt.Println("主节点作恶：全部验证通过，但是拒绝广播")
+			//	log.Info("主节点作恶：全部验证通过，但是拒绝广播")
 			//	p.lock.Unlock()
 			//	return
 			//}
 			//
 			//if p.node.nodeID=="N1"{
-			//	fmt.Println("从节点N1作恶：全部验证通过，但是拒绝广播")
+			//	log.Info("从节点N1作恶：全部验证通过，但是拒绝广播")
 			//	p.lock.Unlock()
 			//	return
 			//}
@@ -399,14 +399,14 @@ func (p *pbft) handlePrepare(content []byte) {
 				log.Error(err)
 			}
 			//进行提交信息的广播
-			fmt.Println("正在进行commit广播")
+			log.Info("正在进行commit广播")
 			msg := meta.TCPMessage{
 				Type:    commonconst.PBFTCommit,
 				Content: bc,
 			}
 			p.broadcast(msg)
 			p.isCommitBordcast[pre.Digest] = true
-			fmt.Println("commit广播完成")
+			log.Info("commit广播完成")
 		}
 		p.lock.Unlock()
 	}
@@ -420,16 +420,16 @@ func (p *pbft) handleCommit(content []byte) {
 	if err != nil {
 		log.Error(err)
 	}
-	fmt.Printf("本节点已接收到%s节点发来的Commit ... \n", c.NodeID)
+	log.Infof("本节点已接收到%s节点发来的Commit ... \n", c.NodeID)
 	//获取消息源节点的公钥，用于数字签名验证
 	MessageNodePubKey := p.getPubKey(c.NodeID)
 	digestByte, _ := hex.DecodeString(c.Digest)
 	if _, ok := p.prePareConfirmCount[c.Digest]; !ok {
-		fmt.Println("当前prepare池无此摘要，拒绝将信息持久化到本地消息池")
+		log.Info("当前prepare池无此摘要，拒绝将信息持久化到本地消息池")
 	} else if p.sequenceID != c.SequenceID {
-		fmt.Println("消息序号对不上，拒绝将信息持久化到本地消息池")
+		log.Info("消息序号对不上，拒绝将信息持久化到本地消息池")
 	} else if !p.RsaVerySignWithSha256(digestByte, c.Sign, MessageNodePubKey) {
-		fmt.Println("节点签名验证失败！,拒绝将信息持久化到本地消息池")
+		log.Info("节点签名验证失败！,拒绝将信息持久化到本地消息池")
 	} else {
 		p.setCommitConfirmMap(c.Digest, c.NodeID, true)
 		count := 0
@@ -439,11 +439,11 @@ func (p *pbft) handleCommit(content []byte) {
 		//如果节点至少收到了2f+1个commit消息（包括自己）,并且节点没有回复过,并且已进行过commit广播，则提交信息至本地消息池，并reply成功标志至客户端！
 		p.lock.Lock()
 		if count >= commonconst.NodeCount/3*2 && !p.isReply[c.Digest] && p.isCommitBordcast[c.Digest] {
-			fmt.Println("本节点已收到至少2f + 1 个节点(包括本地节点)发来的Commit信息 ...")
+			log.Info("本节点已收到至少2f + 1 个节点(包括本地节点)发来的Commit信息 ...")
 			//将消息信息，提交到本地消息池中！
 			localMessagePool = append(localMessagePool, p.messagePool[c.Digest].Message)
 			info := p.node.nodeID + "节点已将msgid:" + strconv.Itoa(p.messagePool[c.Digest].ID) + "存入本地消息池中,消息内容为：" + p.messagePool[c.Digest].Content
-			fmt.Println(info)
+			log.Info(info)
 			//既然已经得到共识，新区块上链，落库
 			bcs := chain.GetCurrentBlockChain()
 			newBCMsg := p.messagePool[c.Digest].Content
@@ -455,14 +455,14 @@ func (p *pbft) handleCommit(content []byte) {
 			//新区块上链后状态数据库进行更新
 			p.refreshState(*newBC)
 			//给客户端reply
-			fmt.Println("正在reply客户端 ...")
+			log.Info("正在reply客户端 ...")
 			tcpMsg := meta.TCPMessage{
 				Type:    commonconst.PBFTReply,
 				Content: []byte(newBCMsg),
 			}
 			network.TCPSend(tcpMsg, p.messagePool[c.Digest].ClientAddr)
 			p.isReply[c.Digest] = true
-			fmt.Println("reply完毕")
+			log.Info("reply完毕")
 		}
 		p.lock.Unlock()
 	}

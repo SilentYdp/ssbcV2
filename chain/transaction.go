@@ -3,7 +3,6 @@ package chain
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/ssbcV2/commonconst"
 	"github.com/ssbcV2/meta"
@@ -21,7 +20,7 @@ func GetCurrentTxs() []meta.Transaction {
 	txsStr, _ := redis.GetFromRedis(commonconst.TransActionsKey)
 	err := json.Unmarshal([]byte(txsStr), &txs)
 	if err != nil {
-		fmt.Println("GetCurrentTxs:json unmarshal failed:", err)
+		log.Info("GetCurrentTxs:json unmarshal failed:", err)
 	}
 	return txs
 }

@@ -20,18 +20,18 @@ func TestVRF(t *testing.T) {
 
 	err := json.Unmarshal([]byte(pkStr), &pubk)
 	if err != nil {
-		fmt.Println(err)
+		log.Info(err)
 	}
 	//验证生成的index
 	index, err := pubk.ProofToHash(m1, proof1)
-	fmt.Println("index=", index)
+	log.Info("index=", index)
 	if err != nil {
-		fmt.Println("err=", err)
+		log.Info("err=", err)
 	}
 	if got, want := index, index1; got != want {
-		fmt.Println("验证失败")
+		log.Info("验证失败")
 	} else {
-		fmt.Println("验证成功")
+		log.Info("验证成功")
 	}
 
 }

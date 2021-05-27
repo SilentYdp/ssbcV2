@@ -9,16 +9,16 @@ import (
 
 func TestGenerateKey(t *testing.T)  {
 	pri,pub:= GetKeyPair()
-	fmt.Println("pri=",string(pri))
-	fmt.Println("pub=",string(pub))
+	log.Info("pri=",string(pri))
+	log.Info("pub=",string(pub))
 	//将公钥进行hash
 	pubHash,_:=util.CalculateHash(pub)
 	//将公钥的前20位作为账户地址
 	account:=hex.EncodeToString(pubHash[:20])
-	fmt.Println(account)
+	log.Info(account)
 }
 
 func TestGoModManage(t *testing.T) {
 	_,errStr:=GoModManage("hellotest")
-	fmt.Println("错误：",errStr)
+	log.Info("错误：",errStr)
 }

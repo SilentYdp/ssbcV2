@@ -12,6 +12,6 @@ func TestExampleClient(t *testing.T) {
 func TestGetandSet(t *testing.T) {
 	SetIntoRedis("ye", "depeng")
 	v, _ := GetFromRedis("ye")
-	fmt.Println(v)
+	log.Info(v)
 	GetFromRedis("hu")
 }

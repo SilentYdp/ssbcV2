@@ -51,7 +51,7 @@ func BuildAndRun(path string,name string) {
 	file, _ := os.Getwd()
 	log.Info("当前程序执行路径:", file)
 	if err != nil {
-		fmt.Println("tar err:",err)
+		log.Info("tar err:",err)
 	}
 
 	//build参数
@@ -66,13 +66,13 @@ func BuildAndRun(path string,name string) {
 
 	res, err := DockerClient.ImageBuild(ctx, tar, opts)
 	if err != nil {
-		fmt.Println("ImageBuild err:", err)
+		log.Info("ImageBuild err:", err)
 	}
 	defer res.Body.Close()
 
 	err = printError(res.Body)
 	if err != nil {
-		fmt.Println("err:", err)
+		log.Info("err:", err)
 	}
 
 	//把build成功的镜像run为容器
@@ -87,7 +87,7 @@ func BuildAndRun(path string,name string) {
 	//这里嵌入一个逻辑--寻找当前空闲的端口号
 	//获取到可用的tcp连接端口
 	availPInt,_ := getFreePort()
-	fmt.Println("可用端口号为：",availPInt)
+	log.Info("可用端口号为：",availPInt)
 	availPStr:=strconv.Itoa(availPInt)
 	portBind := nat.PortBinding{HostPort: availPStr}
 	portMap := make(nat.PortMap, 0)
@@ -101,7 +101,7 @@ func BuildAndRun(path string,name string) {
 	if err!=nil{
 		log.Error(err)
 	}
-	fmt.Printf("容器build成功，ID: %s\n", body.ID)
+	log.Info("容器build成功，ID: ", body.ID)
 	if err := DockerClient.ContainerStart(ctx, body.ID, types.ContainerStartOptions{}); err != nil {
 		log.Error(err)
 		panic(err)
@@ -114,7 +114,7 @@ func ContractDataServer(key string) (data []byte) {
 	params := url.Values{}
 	Url, err := url.Parse("http://docker.for.mac.host.internal:9999/query")
 	if err!=nil{
-		fmt.Println("url parse err:",err)
+		log.Info("url parse err:",err)
 	}
 
 	params.Set("queryKey",key)
@@ -127,7 +127,7 @@ func ContractDataServer(key string) (data []byte) {
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Info(err)
 	}
 
 	return body
@@ -147,7 +147,7 @@ func CallContract(name string,method string,args map[string]string) (retErr erro
 	cs:= ListAllContains()
 	cont:=types.Container{}
 	for _, c := range cs {
-		fmt.Println(c.ID, c.Image)
+		log.Info(c.ID, c.Image)
 		if c.Image==name{
 			cont=c
 			find=true
@@ -175,7 +175,7 @@ func CallContract(name string,method string,args map[string]string) (retErr erro
 	}
 	reqByte,_:=json.Marshal(req)
 	body:=bytes.NewBuffer(reqByte)
-	res,err := http.Post("127.0.0.1:"+portStr, "application/json;charset=utf-8", body)
+	res,err := http.Post("http://127.0.0.1:"+portStr, "application/json;charset=utf-8", body)
 	if err!=nil{
 		log.Error("[CallContract] call err:",err)
 		retErr=err
@@ -217,7 +217,7 @@ func printError(rd io.Reader) error {
 	scanner := bufio.NewScanner(rd)
 	for scanner.Scan() {
 		lastLine = scanner.Text()
-		fmt.Println(scanner.Text())
+		log.Info(scanner.Text())
 	}
 
 	errLine := &ErrorLine{}
@@ -304,7 +304,7 @@ func main2() {
 		panic(err)
 	}
 
-	fmt.Println(resp.ID)
+	log.Info(resp.ID)
 }
 
 //List and manage containers
@@ -315,7 +315,7 @@ func ListAllContains() []types.Container{
 	}
 	return containers
 	//for _, container := range containers {
-	//	fmt.Println(container.ID, container.Image)
+	//	log.Info(container.ID, container.Image)
 	//}
 }
 
@@ -337,7 +337,7 @@ func main4() {
 		if err := cli.ContainerStop(ctx, container.ID, nil); err != nil {
 			panic(err)
 		}
-		fmt.Println("Success")
+		log.Info("Success")
 	}
 }
 
@@ -373,7 +373,7 @@ func main6() {
 	}
 
 	for _, image := range images {
-		fmt.Println(image.ID)
+		log.Info(image.ID)
 	}
 }
 
@@ -429,7 +429,7 @@ func main8() {
 		panic(err)
 	}
 
-	fmt.Println(commitResp.ID)
+	log.Info(commitResp.ID)
 }
 
 //在本机找空闲端口号

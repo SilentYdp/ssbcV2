@@ -111,7 +111,7 @@ func UpdateChain(bc []meta.Block) {
 		// Green console color: 	\x1b[32m
 		// Reset console color: 	\x1b[0m
 		fmt.Printf("\x1b[32m%s\x1b[0m> ", string(bytes))
-		fmt.Println()
+		log.Info()
 	}
 }
 

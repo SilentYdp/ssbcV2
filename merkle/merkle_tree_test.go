@@ -439,12 +439,12 @@ func TestNewMTree(t *testing.T) {
 	merklePath, index, _ := tree.GetMerklePath(contents[testContentIndex])
 
 	//验证merklepath
-	fmt.Println("content=", contents[0])
-	fmt.Println("merklePath=", merklePath)
-	fmt.Println("index=", index)
+	log.Info("content=", contents[0])
+	log.Info("merklePath=", merklePath)
+	log.Info("index=", index)
 	hash, err := tree.Leafs[testContentIndex].calculateNodeHash()
 	if err != nil {
-		fmt.Println("err=", err)
+		log.Info("err=", err)
 	}
 	h := sha256.New()
 	for k := 0; k < len(merklePath); k++ {
@@ -454,17 +454,17 @@ func TestNewMTree(t *testing.T) {
 			hash = append(merklePath[k], hash...)
 		}
 		if _, err := h.Write(hash); err != nil {
-			fmt.Println("err=", err)
+			log.Info("err=", err)
 		}
 		hash, err = calHash(hash, sha256.New)
 		if err != nil {
-			fmt.Println("err=", err)
+			log.Info("err=", err)
 		}
 	}
 	if bytes.Compare(tree.MerkleRoot(), hash) != 0 {
-		fmt.Println("验证失败")
+		log.Info("验证失败")
 	} else {
-		fmt.Println("验证成功")
+		log.Info("验证成功")
 	}
 }
 
@@ -619,9 +619,9 @@ func TestMerkleTree_MerklePath(t *testing.T) {
 		}
 		for j := 0; j < len(table[i].contents); j++ {
 			merklePath, index, _ := tree.GetMerklePath(table[i].contents[j])
-			fmt.Println("content=", table[i].contents[j])
-			fmt.Println("merklePath=", merklePath)
-			fmt.Println("index=", index)
+			log.Info("content=", table[i].contents[j])
+			log.Info("merklePath=", merklePath)
+			log.Info("index=", index)
 			hash, err := tree.Leafs[j].calculateNodeHash()
 			if err != nil {
 				t.Errorf("[case:%d] error: calculateNodeHash error: %v", table[i].testCaseId, err)

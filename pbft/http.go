@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/gin-gonic/gin"
 	"github.com/ssbcV2/chain"
@@ -49,38 +48,69 @@ func clientHttpListenV2()  {
 }
 
 
+//func Cors() gin.HandlerFunc {
+//	return func(c *gin.Context) {
+//		method := c.Request.Method
+//		log.Info("request method=",method)
+//		//origin := c.Request.Header.Get("Origin") //请求头部
+//		//if origin != "" {
+//		//接收客户端发送的origin （重要！）
+//		c.Header("Access-Control-Allow-Origin","*")
+//		//c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+//		//服务器支持的所有跨域请求的方法
+//		c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE,UPDATE")
+//		//允许跨域设置可以返回其他子段，可以自定义字段
+//		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Length, X-CSRF-Token, Token,session")
+//		// 允许浏览器（客户端）可以解析的头部 （重要）
+//		c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers")
+//		//设置缓存时间
+//		c.Header("Access-Control-Max-Age", "172800")
+//		//允许客户端传递校验信息比如 cookie (重要)
+//		c.Header("Access-Control-Allow-Credentials", "true")
+//		c.Header("content-type", "application/json;charset=UTF-8")
+//		//}
+//
+//		//允许类型校验
+//		if method == "OPTIONS" {
+//			c.JSON(http.StatusOK, "ok!")
+//		}
+//
+//		defer func() {
+//			if err := recover(); err != nil {
+//				log.Info("Panic info is: %v", err)
+//			}
+//		}()
+//		c.Next()
+//	}
+//}
 func Cors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		method := c.Request.Method
-		origin := c.Request.Header.Get("Origin") //请求头部
+
+		origin := c.Request.Header.Get("Origin")
+
 		if origin != "" {
-			//接收客户端发送的origin （重要！）
-			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
-			//服务器支持的所有跨域请求的方法
-			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE,UPDATE")
-			//允许跨域设置可以返回其他子段，可以自定义字段
-			c.Header("Access-Control-Allow-Headers", "Authorization, Content-Length, X-CSRF-Token, Token,session")
-			// 允许浏览器（客户端）可以解析的头部 （重要）
-			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers")
-			//设置缓存时间
-			c.Header("Access-Control-Max-Age", "172800")
-			//允许客户端传递校验信息比如 cookie (重要)
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization") //自定义 Header
+			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
 			c.Header("Access-Control-Allow-Credentials", "true")
+
 		}
 
-		//允许类型校验
 		if method == "OPTIONS" {
-			c.JSON(http.StatusOK, "ok!")
+			c.Header("Access-Control-Allow-Origin", "*")
+			c.Header("Access-Control-Allow-Headers", "Content-Type,AccessToken,X-CSRF-Token, Authorization") //自定义 Header
+			c.Header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+			c.Header("Access-Control-Expose-Headers", "Content-Length, Access-Control-Allow-Origin, Access-Control-Allow-Headers, Content-Type")
+			c.Header("Access-Control-Allow-Credentials", "true")
+			c.AbortWithStatus(http.StatusNoContent)
 		}
 
-		defer func() {
-			if err := recover(); err != nil {
-				log.Info("Panic info is: %v", err)
-			}
-		}()
 		c.Next()
 	}
 }
+
 
 //跨域处理
 func cors(f http.HandlerFunc) http.HandlerFunc {
@@ -201,7 +231,7 @@ func sendNewContract(c meta.ContractPost)  {
 	if err != nil {
 		log.Error(err)
 	}
-	//fmt.Println(string(br))
+	//log.Info(string(br))
 	msg := meta.TCPMessage{
 		Type:    commonconst.PBFTRequest,
 		Content: br,
@@ -221,7 +251,7 @@ func GoModManage(contractName string)(err error,errStr string)  {
 		log.Error(err)
 		return err,output1.String()
 	}else {
-		fmt.Println(output1.String())
+		log.Info(output1.String())
 	}
 
 	cmd=exec.Command("go","mod","tidy")
@@ -232,7 +262,7 @@ func GoModManage(contractName string)(err error,errStr string)  {
 		log.Error(err)
 		return err,output2.String()
 	}else {
-		fmt.Println(output2.String())
+		log.Info(output2.String())
 	}
 
 	//执行编译命令
@@ -241,11 +271,11 @@ func GoModManage(contractName string)(err error,errStr string)  {
 	cmd.Stderr=&output3
 	err=cmd.Run()
 	if err!=nil{
-		fmt.Println(output3.String())
+		log.Info(output3.String())
 		log.Error(err)
 		return err,output3.String()
 	}else {
-		fmt.Println(output3.String())
+		log.Info(output3.String())
 	}
 
 	return nil,""
@@ -294,7 +324,7 @@ func  query(ctx *gin.Context) {
 	queryKey := ctx.Query("queryKey")
 	//根据查询key去库中查询数据
 	val := levelDB.DBGet(queryKey)
-	fmt.Println("链上数据服务查询结果:",string(val))
+	log.Info("链上数据服务查询结果:",string(val))
 	hr:= warpGoodHttpResponse(val)
 	ctx.JSON(http.StatusOK,hr)
 }
@@ -313,14 +343,19 @@ func  postTran(ctx *gin.Context) {
 	if err != nil {
 		log.Error("[postTran],json decode err:", err)
 	}
-
+	//将args解析
+	args:=make(map[string]string)
+	err=json.Unmarshal([]byte(pt.Args),&args)
+	if err!=nil{
+		log.Error("[postTran] json err:",err)
+	}
 	t:=meta.Transaction{
 		From:      pt.From,
 		To:        pt.To,
 		Dest:      pt.Dest,
-		Contract:  pt.Dest,
+		Contract:  pt.Contract,
 		Method:    pt.Method,
-		Args:      pt.Args,
+		Args:      args,
 		Data:      meta.TransactionData{},
 		Value:     pt.Value,
 		Id:        nil,
@@ -346,7 +381,7 @@ func  postTran(ctx *gin.Context) {
 	if err != nil {
 		log.Error(err)
 	}
-	//fmt.Println(string(br))
+	//log.Info(string(br))
 	msg := meta.TCPMessage{
 		Type:    commonconst.PBFTRequest,
 		Content: br,

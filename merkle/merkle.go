@@ -147,7 +147,7 @@ func GetTranMerklePath(txs []meta.Transaction, sequence int) (hash []byte, merkl
 	newTree := GenerateMerkleTree(txs)
 	hash, err := newTree.Leafs[sequence].calculateNodeHash()
 	if err != nil {
-		fmt.Println("err=", err)
+		log.Info("err=", err)
 	}
 	txByte, _ := json.Marshal(txs[sequence])
 	txStr := string(txByte)
@@ -168,11 +168,11 @@ func VerifyTranExistence(hash []byte, merklePath [][]byte, index []int64, merkle
 			hash = append(merklePath[k], hash...)
 		}
 		if _, err = h.Write(hash); err != nil {
-			fmt.Println("err=", err)
+			log.Info("err=", err)
 		}
 		hash, err = calHash(hash, sha256.New)
 		if err != nil {
-			fmt.Println("err=", err)
+			log.Info("err=", err)
 		}
 	}
 	if bytes.Compare(merkleRoot, hash) != 0 {

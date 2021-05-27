@@ -18,5 +18,5 @@ func TestGet(t *testing.T)  {
 	}
 
 	rb,_:=json.Marshal(r)
-	fmt.Println(string(rb))
+	log.Info(string(rb))
 }

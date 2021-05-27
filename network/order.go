@@ -215,7 +215,7 @@ func handleTx(rw *bufio.ReadWriter, orderContent string) {
 		chain.StoreBlockChain(curBlockChain)
 		mutex.Unlock()
 		//打印新的区块链
-		//fmt.Println("新区块生成")
+		//log.Info("新区块生成")
 		spew.Dump(curBlockChain)
 		//重置当前的交易列表
 		chain.ClearCurrentTxs()
@@ -249,7 +249,7 @@ func ParseOrder(order string) (orderType string, orderContent string) {
 	//依据:来划分指令
 	s := strings.Split(order, "-")
 	if len(s) == 0 {
-		fmt.Println("invalid order")
+		log.Info("invalid order")
 	}
 	orderType = s[0]
 	if len(s) == 2 {

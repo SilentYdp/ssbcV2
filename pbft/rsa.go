@@ -9,7 +9,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
-	"log"
+	"github.com/cloudflare/cfssl/log"
 	"os"
 	"strconv"
 )
@@ -17,23 +17,23 @@ import (
 //如果当前目录下不存在目录Keys，则创建目录，并为各个节点生成rsa公私钥
 func GenRsaKeys() {
 	if !isExist("./Keys") {
-		fmt.Println("检测到还未生成公私钥目录，正在生成公私钥 ...")
+		log.Info("检测到还未生成公私钥目录，正在生成公私钥 ...")
 		err := os.Mkdir("Keys", 0777)
 		if err != nil {
-			log.Panic()
+			log.Error()
 		}
 		for i := 0; i <= 4; i++ {
 			if !isExist("./Keys/N" + strconv.Itoa(i)) {
 				err := os.Mkdir("./Keys/N"+strconv.Itoa(i), 0777)
 				if err != nil {
-					log.Panic()
+					log.Error()
 				}
 			}
 			priv, pub := GetKeyPair()
 			privFileName := "Keys/N" + strconv.Itoa(i) + "/N" + strconv.Itoa(i) + "_RSA_PIV"
 			file, err := os.OpenFile(privFileName, os.O_RDWR|os.O_CREATE, 0777)
 			if err != nil {
-				log.Panic(err)
+				log.Error(err)
 			}
 			defer file.Close()
 			file.Write(priv)
@@ -41,12 +41,12 @@ func GenRsaKeys() {
 			pubFileName := "Keys/N" + strconv.Itoa(i) + "/N" + strconv.Itoa(i) + "_RSA_PUB"
 			file2, err := os.OpenFile(pubFileName, os.O_RDWR|os.O_CREATE, 0777)
 			if err != nil {
-				log.Panic(err)
+				log.Error(err)
 			}
 			defer file2.Close()
 			file2.Write(pub)
 		}
-		fmt.Println("已为节点们生成RSA公私钥")
+		log.Info("已为节点们生成RSA公私钥")
 	}
 }
 
@@ -86,7 +86,7 @@ func isExist(path string) bool {
 		if os.IsNotExist(err) {
 			return false
 		}
-		fmt.Println(err)
+		log.Info(err)
 		return false
 	}
 	return true
@@ -103,7 +103,7 @@ func (p *pbft) RsaSignWithSha256(data []byte, keyBytes []byte) []byte {
 	}
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		fmt.Println("ParsePKCS8PrivateKey err", err)
+		log.Info("ParsePKCS8PrivateKey err", err)
 		panic(err)
 	}
 
@@ -145,7 +145,7 @@ func RsaSignWithSha256(data []byte, keyBytes []byte) []byte {
 	}
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-		fmt.Println("ParsePKCS8PrivateKey err", err)
+		log.Info("ParsePKCS8PrivateKey err", err)
 		panic(err)
 	}
 
@@ -173,7 +173,7 @@ func RsaVerySignWithSha256(data, signData, keyBytes []byte) bool {
 	err = rsa.VerifyPKCS1v15(pubKey.(*rsa.PublicKey), crypto.SHA256, hashed[:], signData)
 	if err != nil {
 		//panic(err)
-		fmt.Println("验签不通过！")
+		log.Info("验签不通过！")
 		return false
 	}
 	return true

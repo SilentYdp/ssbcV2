@@ -2,7 +2,6 @@ package pbft
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/ssbcV2/chain"
 	"github.com/ssbcV2/commonconst"
@@ -26,7 +25,7 @@ func clientTcpListen() {
 		if err != nil {
 			log.Error(err)
 		}
-		fmt.Println("新连接：", conn.LocalAddr().String(), conn.RemoteAddr().String())
+		log.Info("新连接：", conn.LocalAddr().String(), conn.RemoteAddr().String())
 		clientHandleNewConn(conn)
 	}
 }
@@ -34,7 +33,7 @@ func clientTcpListen() {
 func clientHandleNewConn(conn net.Conn) {
 	//buf := make([]byte, 4096)
 	//n, err := conn.Read(buf) //从conn读取
-	//fmt.Println("接收到消息：", string(buf[:n]))
+	//log.Info("接收到消息：", string(buf[:n]))
 	//if err == nil {
 	//	clientHandleTcpMsg(buf[:n], conn)
 	//} else if err != io.EOF {
@@ -98,11 +97,11 @@ func (p *pbft) TcpListen() {
 	if err != nil {
 		log.Error(err)
 	}
-	fmt.Printf("节点开启监听，地址：%s\n", p.node.addr)
+	log.Info("节点开启监听，地址：", p.node.addr)
 	defer listen.Close()
 	for {
 		conn, err := listen.Accept()
-		fmt.Println("新连接：", conn.LocalAddr().String(), conn.RemoteAddr().String())
+		log.Info("新连接：", conn.LocalAddr().String(), conn.RemoteAddr().String())
 		if err != nil {
 			log.Error(err)
 		}
@@ -116,7 +115,7 @@ func (p *pbft) handleNewConn(conn net.Conn) {
 	//	buf := make([]byte, 4096)
 	//	n, err := conn.Read(buf) //从conn读取
 	//	if err == nil {
-	//		fmt.Println("接收到消息：", string(buf[:n]))
+	//		log.Info("接收到消息：", string(buf[:n]))
 	//		p.handleRequest(buf[:n], conn)
 	//	} else if err != io.EOF {
 	//		log.Error("[handleNewConn] err:", err)
