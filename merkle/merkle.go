@@ -112,7 +112,7 @@ func NewTree(cs []Content) (*MerkleTree, error) {
 	return t, nil
 }
 
-//根据交易集合生成merkle树
+//根据交易集合生成merkle树--待测试
 func GenerateMerkleTree(txs []meta.Transaction) *MerkleTree {
 	contents := make([]Content, 0)
 	for _, tx := range txs {

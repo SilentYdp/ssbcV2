@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
-	"fmt"
+	"github.com/cloudflare/cfssl/log"
 	"hash"
 	"testing"
 )
@@ -647,3 +647,4 @@ func TestMerkleTree_MerklePath(t *testing.T) {
 		}
 	}
 }
+

@@ -11,26 +11,13 @@ import (
 	"os"
 )
 
-const nodeCount = 4
 
-//客户端与节点通信的监听地址
-var clientAddr = "127.0.0.1:8888"
 
-//客户端与用户通信监听地址
-var clientHttpAddr = ":9999"
-
-//节点池，主要用来存储监听地址
-var nodeTable map[string]string
 
 func main() {
 	//为四个节点生成公私钥
 	pbft.GenRsaKeys()
-	nodeTable = map[string]string{
-		"N0":     "127.0.0.1:8000",
-		"N1":     "127.0.0.1:8001",
-		"N2":     "127.0.0.1:8002",
-		"N3":     "127.0.0.1:8003",
-	}
+
 	if len(os.Args) != 2 {
 		log.Error("输入的参数有误！")
 	}
@@ -41,7 +28,7 @@ func main() {
 		pbft.ClientSendMessageAndListen() //启动客户端程序
 		//初始化
 		initBlockChain(nodeID)
-	} else if addr, ok := nodeTable[nodeID]; ok {
+	} else if addr, ok := commonconst.NodeTable[nodeID]; ok {
 		p := pbft.NewPBFT(nodeID, addr)
 		go p.TcpListen() //启动节点
 		//初始化
