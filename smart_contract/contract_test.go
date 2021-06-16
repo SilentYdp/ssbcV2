@@ -18,19 +18,19 @@ func TestGenerateCodeJson(t *testing.T) {
 package main
 
 import (
-	"encoding/json"
-	"github.com/gorilla/mux"
-	"log"
-	"net/http"
-	"time"
+"encoding/json"
+"github.com/gorilla/mux"
+"log"
+"net/http"
+"time"
 )
 
 /*
 	一个合约部署的示例代码
 */
 
-const SoftWareTest  = "SoftWareTest"
-const ContractName  = "softwaretest"//不要有大写字母
+const NightMethod  = "night"
+const ContractName  = "goodnight"//不要有大写字母
 
 
 //这个固定的
@@ -54,8 +54,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	methodName:=cr.Method
 	switch methodName {
-	case SoftWareTest:
-		handleSoftWareTest(cr.Args,w)
+	case NightMethod:
+		handleNightMethod(cr.Args,w)
 	}
 
 }
@@ -64,16 +64,16 @@ func handler(w http.ResponseWriter, r *http.Request) {
 //	"name":"ye"
 //}
 
-func handleSoftWareTest(args map[string]string,w http.ResponseWriter)  {
-	name:=args["name"]
-	result:="hello"+name
+func handleNightMethod(args map[string]string,w http.ResponseWriter)  {
+	day:=args["day"]
+	result:="good"+day
 
 	//根据传进来的参数如何处理自己可以发挥，但是处理结果交给链上处理得按如下的模板设置
 
 	//下面的写法是固定的，理解：读集-就是不存到链上，就是调用这个合约函数看看结果，写集--需要更新到链上，存到链上。方便起见，可以设置为函数的调用结果
 	//不需要存链，就放到读集里
 	read:=make(map[string]string)
-	read["softwareTest"]=result
+	read[day]=result
 	res:=ContractResponse{
 		Read: read,
 		Set:  nil,
@@ -82,8 +82,6 @@ func handleSoftWareTest(args map[string]string,w http.ResponseWriter)  {
 	//这些都不用改
 	resByte,_:=json.Marshal(res)
 	w.Write(resByte)
-
-
 }
 
 //这块不用动
@@ -108,8 +106,8 @@ func main() {
 
 func TestGenerateArgsJsonMap(t *testing.T){
 	m:=make(map[string]string)
-	m["height"]="0"
-	m["dest"]="ssbc2"
+	m["day"]="monday"
+	m["year"]="22"
 	mB,_:=json.Marshal(m)
 	a:= struct {
 		Args string

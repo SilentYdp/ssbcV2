@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"github.com/cloudflare/cfssl/log"
 	"github.com/google/keytransparency/core/crypto/vrf/p256"
 	"github.com/ssbcV2/commonconst"
@@ -45,7 +46,10 @@ func VRF(count int) {
 
 func GenerateVrfResult(msg string) (result meta.VRFResult) {
 	//首先生成私钥k，公钥pk
+	k1,pk1:=p256.GenerateKey()
+	fmt.Println(k1,pk1)
 	k, pk := p256.GenerateKey()
+
 	pkByte, _ := json.Marshal(pk)
 	m1 := []byte(msg)
 	index1, proof := k.Evaluate(m1)

@@ -3,6 +3,7 @@ package vrf
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/cloudflare/cfssl/log"
 	"github.com/google/keytransparency/core/crypto/vrf/p256"
 	"testing"
 )
@@ -37,5 +38,14 @@ func TestVRF(t *testing.T) {
 }
 
 func TestGenerateVrfResult(t *testing.T) {
-	GenerateVrfResult("vrf")
+	res:=GenerateVrfResult("hello")
+	fmt.Println(res.Result)
+
+	//res.Msg="hi"
+	//res.PK=[]byte{}
+	_,pk1:=p256.GenerateKey()
+	pk1B,_:=json.Marshal(pk1)
+	res.PK=pk1B
+	b:=VerifyVrf(res)
+	fmt.Println(b)
 }
